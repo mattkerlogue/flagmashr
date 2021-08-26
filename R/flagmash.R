@@ -43,8 +43,8 @@ get_flag <- function(code) {
 
   code <- tolower(code)
 
-  flag <- file.path("inst", "extdata", "flag-icon-css", "flags", "4x3",
-                    paste0(code, ".svg"))
+  flag <- system.file("extdata", "flag-icon-css", "flags", "4x3",
+                     paste0(code, ".svg"), package = "flagmashr")
 
   readLines(flag)
 
@@ -53,7 +53,11 @@ get_flag <- function(code) {
 # get the colours from a flag
 get_flag_colours <- function(flag) {
 
-  flag_colours <- gsub("(.*)(#[a-zA-Z0-9]+)(.*)", "\\2", flag)[grepl("#", flag)]
+  fill_colours <- gsub("(.*)(fill=\")(#[A-z0-9]+)(\".*)", "\\3", flag)[grepl("fill=\"#", flag)]
+
+  stroke_colours <- gsub("(.*)(stroke=\")(#[A-z0-9]+)(\".*)", "\\3", flag)[grepl("stroke=\"#", flag)]
+
+  flag_colours <- c(fill_colours, stroke_colours)
 
   return(unique(flag_colours))
 
@@ -65,6 +69,13 @@ replace_flag_colours <- function(flag, replacement_colours) {
   # get current flag colours
   my_colours <- get_flag_colours(flag)
 
+  reorder_my_colours <- runif(length(my_colours)) |>
+    setNames(my_colours) |>
+    sort() |>
+    names()
+
+  my_colours <- reorder_my_colours
+
   # randomise order of the replacement colours
   new_colours <- runif(length(replacement_colours)) |>
     setNames(replacement_colours) |>
@@ -72,28 +83,39 @@ replace_flag_colours <- function(flag, replacement_colours) {
     names()
 
   if (length(my_colours) < length(new_colours)) {
-    #subset to smaller amount
+    # subset to smaller amount number of flag colours
     new_colours <- new_colours[1:length(my_colours)]
   } else if (length(my_colours) > length(new_colours)) {
-
+    # calculate components for replication
     replicate <- length(my_colours) %/% length(new_colours)
     remainder <- length(my_colours) %% length(new_colours)
 
+    # repeat the colours
     new_colours <- rep(new_colours, replicate)
 
+    # pad colours to the length of my_colours
     if (remainder > 0) {
       new_colours <- c(new_colours, new_colours[1:remainder])
     }
 
   }
 
+  # duplicate the flag
   new_flag <- flag
 
+  # loop along colours and swap colours for code
   for (i in seq_along(my_colours)) {
-    new_flag <- gsub(my_colours[i], new_colours[i], new_flag)
+    colour_replace <- paste0("#!#", LETTERS[i], "#!#")
+    new_flag <- gsub(my_colours[i], colour_replace, new_flag)
   }
 
+  # loop along colours and swap colours for letter replacement
+  for (i in seq_along(my_colours)) {
+    colour_replace <- paste0("#!#", LETTERS[i], "#!#")
+    new_flag <- gsub(colour_replace, new_colours[i], new_flag)
+  }
+
+  # return the flag
   return(new_flag)
 
 }
-
