@@ -1,0 +1,3 @@
+[submodule "inst/extdata/flag-icon-css"]
+	path = inst/extdata/flag-icon-css
+	url = https://github.com/lipis/flag-icon-css.git
